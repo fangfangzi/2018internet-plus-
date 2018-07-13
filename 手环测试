@@ -1,0 +1,58 @@
+import numpy as np
+import tensorflow as tf
+import pandas as pd
+from pandas import DataFrame
+
+f = open('测试数据集.csv',encoding='utf-8')
+df = pd.read_csv(f)
+a = np.array([df.JX,df.JY,df.JZ,df.CX,df.CY,df.CZ])
+x_input = a.reshape(-1,6)
+xs = tf.placeholder(tf.float32,[None,6])
+
+def prediction_function(v_xs):
+    global prediction
+    global y_pre
+    y_pre = sess.run(prediction,feed_dict = {xs:v_xs})
+    return y_pre
+    
+def add_layer(x,x_rows,the_number_of_neuron,activation_function = None,keep_pro = 1,normal = True):
+    global Weight
+    global biases
+    Weight = tf.Variable(tf.random_normal([x_rows,the_number_of_neuron]),name='Weights',dtype=tf.float32)
+    biases = tf.Variable(tf.zeros([1,the_number_of_neuron])+0.1,name='biases',dtype=tf.float32)
+    Wx_plus_b = tf.add(tf.matmul(x,Weight),biases)
+    Wx_plus_b = tf.nn.dropout(Wx_plus_b,keep_pro)
+    
+    if normal:
+        mean,var = tf.nn.moments(Wx_plus_b,axes=[0])
+        scale = tf.Variable(tf.ones([the_number_of_neuron]))
+        shift = tf.Variable(tf.zeros([the_number_of_neuron]))
+        eps = 0.001
+        Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b,mean,var,shift,scale,eps)
+
+    if activation_function == None:
+        outcome = Wx_plus_b
+    else:
+        outcome = activation_function(Wx_plus_b)
+    return outcome
+    
+l1 = add_layer(xs,6,30,activation_function=tf.nn.softmax,keep_pro=1)
+l2 = add_layer(l1,30,24,activation_function=tf.nn.softmax,keep_pro=1)
+l3 = add_layer(l2,24,18,activation_function=tf.nn.softmax,keep_pro=1)
+l4 = add_layer(l3,18,12,activation_function=tf.nn.softmax,keep_pro=1)
+l5 = add_layer(l4,12,6,activation_function=tf.nn.softmax,keep_pro=1)
+l6 = add_layer(l5,6,5,activation_function=tf.nn.softmax,keep_pro=1)
+prediction = add_layer(l6,5,3,activation_function=tf.nn.softmax,normal=False)
+
+saver = tf.train.Saver()
+with tf.Session() as sess:
+    saver.restore(sess,'my_classfiter/final_model.ckpt')
+    y_prediction = prediction_function(x_input)
+    
+df1 = DataFrame(y_prediction)
+df1.columns = ['骑车','玩手机','运动']
+df2 = DataFrame(df1.mean(axis=0))
+df3 = df2.transpose()
+possiblly_doing = df3.idxmax(axis=1)
+for each in possiblly_doing:
+    print('用户正在:',each)
