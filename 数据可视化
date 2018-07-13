@@ -1,0 +1,43 @@
+
+# coding: utf-8
+
+# In[25]:
+
+
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import pdist
+get_ipython().run_line_magic('matplotlib', 'notebook')
+
+
+# In[26]:
+
+
+f = open('血压心率处理后.csv',encoding='utf-8')
+df = pd.read_csv(f)
+f.close()
+
+
+# In[27]:
+
+
+df.drop(['Unnamed: 0'],axis=1,inplace=True)
+
+
+# In[28]:
+
+
+fig = plt.figure(num=1)
+df[0:100].心率.plot()
+plt.show()
+
+
+# In[29]:
+
+
+fig2 = plt.figure(num=2)
+df[0:100].平均脉压.plot()
+plt.show()
+
