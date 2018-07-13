@@ -1,0 +1,46 @@
+
+# coding: utf-8
+
+# In[107]:
+
+
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import pdist
+get_ipython().run_line_magic('matplotlib', 'notebook')
+
+
+# In[116]:
+
+
+f = open('血压心率处理后.csv',encoding='utf-8')
+df = pd.read_csv(f)
+f.close()
+
+
+# In[118]:
+
+
+df6 = df.drop(['Unnamed: 0'],axis=1)
+
+
+# df4.to_csv('高低压心率集合.csv',encoding='utf_8_sig')
+
+# In[119]:
+
+
+x = np.sqrt((df6.平均脉压 - 87.5)**2 + (df6.心率-80)**2 )
+sigma = np.std(x)
+miu = np.mean(x)
+x1 = x-miu/sigma
+df6['分数']=100*(1/(np.sqrt(2*np.pi)*1) * (2.718281828459045**((x-0)**2/(-2*sigema**2))))+60
+score = np.mean(df6.分数)
+
+
+# In[120]:
+
+
+print('用户这一次健康评分为：',score)
+
