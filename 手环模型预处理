@@ -1,0 +1,33 @@
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+
+file_name = '运动.txt'
+final_file_name = '运动.csv'
+input_label = '4'
+
+def preprocess_function(file_name,final_file_name,input_label):    
+    f = open(file_name,encoding='UTF-8')
+    df = pd.read_csv(f)
+    df.columns = ['t']
+    df1 = df.t.str.replace('+','').str.split('\t',expand = True)
+    arr = np.array(df1)
+    l = []
+    for i in range(arr.shape[0]):
+        each_list = []
+        for each in arr[i]:
+            try:
+                each = int(each)
+                each_list.append(each)
+            except:
+                each = np.nan
+                each_list.append(each)
+        l.append(np.array(each_list))
+    arr1 = np.array(l)
+    df2 = DataFrame(arr1)
+    df3 = df2.dropna(how = 'any',axis=0)
+    df3.columns = ['CX','CY','CZ','JX','JY','JZ']
+    df3['label'] = input_label
+    df3.to_csv(final_file_name,encoding='utf_8_sig')
+    
+preprocess_function(file_name,final_file_name,input_label)
