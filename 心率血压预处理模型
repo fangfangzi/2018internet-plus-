@@ -1,0 +1,50 @@
+
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+
+
+# In[2]:
+
+
+f = open('熬夜原始集合.txt',encoding='utf-8')
+df = pd.read_table(f)
+f.close()
+
+
+# In[3]:
+
+
+df1 = df.test.str.split(' ',expand = True)
+df2 = df1.drop(df1.columns[5:],axis=1)
+df2.columns = ['测试时间','频率','高压','低压','心率']
+df3 = df2.drop('频率',axis=1).set_index('测试时间')
+arr = np.array(df3)
+l = []
+for i in range(arr.shape[0]):
+    each_list = []
+    for each in arr[i]:
+        try:
+            each = int(each,16)
+            each_list.append(each)
+        except:
+            each = np.nan
+            each_list.append(each)
+    l.append(np.array(each_list))
+df4 = DataFrame(l)
+df4.columns = ['高压','低压','心率']
+df5 = df4[(90<df4.高压)&(df4.高压<140)&(df4.低压>60)&(df4.低压<90)&(df4.心率<100)&(df4.心率>60)]
+df5['平均脉压'] = (df5.高压 + 2 * df5.低压)/3
+df6 = df5.drop(['高压','低压'],axis=1)
+
+
+# In[4]:
+
+
+df6.to_csv('血压心率处理后.csv',encoding='utf_8_sig')
+
