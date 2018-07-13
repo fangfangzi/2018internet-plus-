@@ -1,0 +1,77 @@
+import numpy as np
+import tensorflow as tf
+import pandas as pd
+from sklearn.cross_validation import train_test_split
+
+Epoch = 500
+x_columens = 6
+y_columens = 3
+learning_rate = 0.4
+
+f = open('陀螺仪数据集合.csv',encoding='utf-8')
+df = pd.read_csv(f)
+f.close()
+df1 = df.drop('label',axis=1)
+df2 = df1.drop(['Unnamed: 0'],axis=1)
+
+x_data = np.array(df2)
+y_data = tf.one_hot(indices=df.label,depth=3,axis=1,dtype=tf.float32)
+
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    a1 = sess.run(y_data)
+    x_train,x_test,y_train,y_test=train_test_split(x_data,a1,test_size=0.2)
+    
+xs = tf.placeholder(tf.float32,[None,x_columens])
+ys = tf.placeholder(tf.float32,[None,y_columens])
+
+def add_layer(x,x_rows,the_number_of_neuron,activation_function = None,keep_pro = 1,normal = True):
+    global Weight
+    global biases
+    Weight = tf.Variable(tf.random_normal([x_rows,the_number_of_neuron]),name='Weights',dtype=tf.float32)
+    biases = tf.Variable(tf.zeros([1,the_number_of_neuron])+0.1,name='biases',dtype=tf.float32)
+    Wx_plus_b = tf.add(tf.matmul(x,Weight),biases)
+    Wx_plus_b = tf.nn.dropout(Wx_plus_b,keep_pro)
+    
+    if normal:
+        mean,var = tf.nn.moments(Wx_plus_b,axes=[0])
+        scale = tf.Variable(tf.ones([the_number_of_neuron]))
+        shift = tf.Variable(tf.zeros([the_number_of_neuron]))
+        eps = 0.001
+        Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b,mean,var,shift,scale,eps)
+
+    if activation_function == None:
+        outcome = Wx_plus_b
+    else:
+        outcome = activation_function(Wx_plus_b)
+    return outcome
+    
+def compute_accuracy(v_xs,v_ys):
+    global prediction
+    y_pre = sess.run(prediction,feed_dict = {xs:v_xs})
+    correct_prediction = tf.equal(tf.argmax(y_pre,1),tf.argmax(v_ys,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
+    result = sess.run(accuracy,feed_dict = {xs:v_xs,ys:v_ys})
+    return result
+    
+l1 = add_layer(xs,6,30,activation_function=tf.nn.softmax,keep_pro=1)
+l2 = add_layer(l1,30,24,activation_function=tf.nn.softmax,keep_pro=1)
+l3 = add_layer(l2,24,18,activation_function=tf.nn.softmax,keep_pro=1)
+l4 = add_layer(l3,18,12,activation_function=tf.nn.softmax,keep_pro=1)
+l5 = add_layer(l4,12,6,activation_function=tf.nn.softmax,keep_pro=1)
+l6 = add_layer(l5,6,5,activation_function=tf.nn.softmax,keep_pro=1)
+prediction = add_layer(l6,5,3,activation_function=tf.nn.softmax,normal=False)
+
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(ys * tf.log(prediction),reduction_indices=[1]))
+init = tf.global_variables_initializer()
+train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
+saver = tf.train.Saver()
+
+with tf.Session() as sess:
+    sess.run(init)
+    for i in range(Epoch):
+        sess.run(train_step,feed_dict = {xs:x_train,ys:y_train})
+        if i%100 == 0:
+            print('Epoch',i,'- Validation Accuracy:',compute_accuracy(x_train,y_train))
+    save_path = saver.save(sess,'my_classfiter/final_model.ckpt')
+    print('Sucessfully save to path:',save_path)
