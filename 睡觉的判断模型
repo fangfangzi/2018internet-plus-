@@ -1,0 +1,29 @@
+
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+
+
+# In[2]:
+
+
+f = open('血压心率处理后.csv',encoding='utf-8')
+df = pd.read_csv(f)
+f.close()
+df = df.drop(['Unnamed: 0'],axis=1)
+
+
+# In[6]:
+
+
+if (np.mean(df.心率) <45)&(np.mean(df.心率)>40):
+    flag = 1
+    print('用户正在睡觉')
+else:
+    flag = 0
+
